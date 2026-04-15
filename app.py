@@ -1,9 +1,10 @@
+"import streamlit as st
 import joblib
 import pickle
 import numpy as np
 import pandas as pd
 
-# ─── Load Models & Scalers ───
+# Load Models & Scalers
 @st.cache_resource
 def load_models():
     reg = joblib.load('regression_model.joblib')
@@ -16,33 +17,25 @@ def load_models():
 reg_model, class_model, scaler, model_columns = load_models()
 
 st.set_page_config(page_title=\"Bento Motors AI\", page_icon=\"🚗\", layout=\"wide\", initial_sidebar_state=\"collapsed\")
+
 st.markdown(\"\"\"
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
-    /* Global Reset & Base */
     * { 
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         -webkit-font-smoothing: antialiased;
     }
     
-    .stApp { 
-        background: #fbfbfd;
-    }
-    
-    /* Hide Streamlit Defaults */
+    .stApp { background: #fbfbfd; }
     #MainMenu, footer, header { visibility: hidden; }
     .stDeployButton { display: none; }
     
-    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: #86868b; }
     
-    /* ═══════════════════════════════════════════════════════════
-       HERO SECTION - Apple Style
-    ═══════════════════════════════════════════════════════════ */
     .hero-section {
         background: linear-gradient(180deg, #000000 0%, #1d1d1f 100%);
         border-radius: 0 0 40px 40px;
@@ -63,16 +56,6 @@ st.markdown(\"\"\"
         height: 100%;
         background: radial-gradient(ellipse at 50% 0%, rgba(88, 86, 214, 0.15) 0%, transparent 60%);
         pointer-events: none;
-    }
-    
-    .hero-section::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
     }
     
     .hero-badge {
@@ -123,9 +106,7 @@ st.markdown(\"\"\"
         animation: fadeInUp 0.8s ease-out 0.3s both;
     }
     
-    .stat-item {
-        text-align: center;
-    }
+    .stat-item { text-align: center; }
     
     .stat-number {
         font-size: 56px;
@@ -144,9 +125,6 @@ st.markdown(\"\"\"
         margin-top: 8px;
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       NAVIGATION TABS - Apple Pill Style
-    ═══════════════════════════════════════════════════════════ */
     .stTabs [data-baseweb=\"tab-list\"] {
         gap: 4px;
         justify-content: center;
@@ -169,9 +147,7 @@ st.markdown(\"\"\"
         transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
     }
     
-    .stTabs [data-baseweb=\"tab\"]:hover {
-        background: rgba(0,0,0,0.04);
-    }
+    .stTabs [data-baseweb=\"tab\"]:hover { background: rgba(0,0,0,0.04); }
     
     .stTabs [aria-selected=\"true\"] {
         background: #ffffff !important;
@@ -179,17 +155,8 @@ st.markdown(\"\"\"
         box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
     }
     
-    .stTabs [data-baseweb=\"tab-highlight\"] {
-        display: none;
-    }
+    .stTabs [data-baseweb=\"tab-highlight\"], .stTabs [data-baseweb=\"tab-border\"] { display: none; }
     
-    .stTabs [data-baseweb=\"tab-border\"] {
-        display: none;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════
-       SECTION HEADERS
-    ═══════════════════════════════════════════════════════════ */
     .section-header {
         font-size: 40px;
         font-weight: 700;
@@ -207,9 +174,6 @@ st.markdown(\"\"\"
         margin-bottom: 40px;
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       FORM CONTAINER - Glass Morphism
-    ═══════════════════════════════════════════════════════════ */
     .form-container {
         background: #ffffff;
         border-radius: 24px;
@@ -237,9 +201,6 @@ st.markdown(\"\"\"
         border-radius: 2px;
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       RESULT BOX - Gradient Card
-    ═══════════════════════════════════════════════════════════ */
     .result-box {
         background: linear-gradient(135deg, #1d1d1f 0%, #2d2d2d 100%);
         padding: 50px 40px;
@@ -255,10 +216,7 @@ st.markdown(\"\"\"
     .result-box::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        top: 0; left: 0; right: 0; bottom: 0;
         background: radial-gradient(ellipse at 30% 0%, rgba(94,92,230,0.2) 0%, transparent 50%),
                     radial-gradient(ellipse at 70% 100%, rgba(191,90,242,0.15) 0%, transparent 50%);
         pointer-events: none;
@@ -285,9 +243,6 @@ st.markdown(\"\"\"
         text-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       CATEGORY BADGES
-    ═══════════════════════════════════════════════════════════ */
     .cat-budget {
         background: linear-gradient(135deg, #30d158 0%, #34c759 100%);
         padding: 16px 32px;
@@ -327,9 +282,6 @@ st.markdown(\"\"\"
         box-shadow: 0 4px 16px rgba(255, 55, 95, 0.3);
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       METRIC CARDS
-    ═══════════════════════════════════════════════════════════ */
     .metric-card {
         background: #ffffff;
         padding: 32px 24px;
@@ -345,9 +297,7 @@ st.markdown(\"\"\"
     .metric-card::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
+        top: 0; left: 0; right: 0;
         height: 4px;
         background: linear-gradient(90deg, #5e5ce6, #bf5af2);
     }
@@ -372,9 +322,6 @@ st.markdown(\"\"\"
         font-weight: 500;
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       INFO BOX
-    ═══════════════════════════════════════════════════════════ */
     .info-box {
         background: #ffffff;
         padding: 32px;
@@ -398,9 +345,6 @@ st.markdown(\"\"\"
         font-size: 15px;
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       SUMMARY ROWS
-    ═══════════════════════════════════════════════════════════ */
     .summary-row {
         display: flex;
         justify-content: space-between;
@@ -408,25 +352,10 @@ st.markdown(\"\"\"
         border-bottom: 1px solid #f5f5f7;
     }
     
-    .summary-row:last-child {
-        border-bottom: none;
-    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { color: #86868b; font-weight: 500; font-size: 14px; }
+    .summary-value { color: #1d1d1f; font-weight: 600; font-size: 14px; }
     
-    .summary-label {
-        color: #86868b;
-        font-weight: 500;
-        font-size: 14px;
-    }
-    
-    .summary-value {
-        color: #1d1d1f;
-        font-weight: 600;
-        font-size: 14px;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════
-       STEP CARDS - Timeline Style
-    ═══════════════════════════════════════════════════════════ */
     .step-card {
         background: #ffffff;
         padding: 28px 28px 28px 80px;
@@ -461,23 +390,9 @@ st.markdown(\"\"\"
         box-shadow: 0 4px 12px rgba(94, 92, 230, 0.3);
     }
     
-    .step-card h4 {
-        color: #1d1d1f;
-        margin: 0 0 8px 0;
-        font-size: 17px;
-        font-weight: 600;
-    }
+    .step-card h4 { color: #1d1d1f; margin: 0 0 8px 0; font-size: 17px; font-weight: 600; }
+    .step-card p { color: #86868b; margin: 0; line-height: 1.6; font-size: 14px; }
     
-    .step-card p {
-        color: #86868b;
-        margin: 0;
-        line-height: 1.6;
-        font-size: 14px;
-    }
-    
-    /* ═══════════════════════════════════════════════════════════
-       BUTTONS - Apple Style
-    ═══════════════════════════════════════════════════════════ */
     .stButton > button {
         background: linear-gradient(135deg, #5e5ce6 0%, #bf5af2 100%);
         color: white;
@@ -497,15 +412,7 @@ st.markdown(\"\"\"
         box-shadow: 0 8px 28px rgba(94, 92, 230, 0.4);
     }
     
-    .stButton > button:active {
-        transform: translateY(0);
-    }
-    
-    /* ═══════════════════════════════════════════════════════════
-       FORM INPUTS - Apple Style
-    ═══════════════════════════════════════════════════════════ */
-    .stSelectbox > div > div,
-    .stNumberInput > div > div > input {
+    .stSelectbox > div > div, .stNumberInput > div > div > input {
         background: #f5f5f7 !important;
         border: 2px solid transparent !important;
         border-radius: 12px !important;
@@ -514,34 +421,24 @@ st.markdown(\"\"\"
         transition: all 0.3s ease !important;
     }
     
-    .stSelectbox > div > div:hover,
-    .stNumberInput > div > div > input:hover {
+    .stSelectbox > div > div:hover, .stNumberInput > div > div > input:hover {
         background: #ebebed !important;
     }
     
-    .stSelectbox > div > div:focus-within,
-    .stNumberInput > div > div > input:focus {
+    .stSelectbox > div > div:focus-within, .stNumberInput > div > div > input:focus {
         background: #ffffff !important;
         border-color: #5e5ce6 !important;
         box-shadow: 0 0 0 4px rgba(94, 92, 230, 0.1) !important;
     }
     
-    /* Label styling */
-    .stSelectbox label,
-    .stNumberInput label {
+    .stSelectbox label, .stNumberInput label {
         color: #1d1d1f !important;
         font-weight: 600 !important;
         font-size: 14px !important;
         margin-bottom: 8px !important;
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       GITHUB LINK
-    ═══════════════════════════════════════════════════════════ */
-    .github-link {
-        text-align: center;
-        margin-bottom: 40px;
-    }
+    .github-link { text-align: center; margin-bottom: 40px; }
     
     .github-link a {
         display: inline-flex;
@@ -562,9 +459,6 @@ st.markdown(\"\"\"
         transform: translateY(-2px);
     }
     
-    /* ═══════════════════════════════════════════════════════════
-       FOOTER
-    ═══════════════════════════════════════════════════════════ */
     .footer {
         background: #1d1d1f;
         border-radius: 28px 28px 0 0;
@@ -573,17 +467,8 @@ st.markdown(\"\"\"
         text-align: center;
     }
     
-    .footer-brand {
-        font-size: 24px;
-        font-weight: 700;
-        color: #ffffff;
-        margin-bottom: 8px;
-    }
-    
-    .footer-text {
-        color: rgba(255,255,255,0.5);
-        font-size: 14px;
-    }
+    .footer-brand { font-size: 24px; font-weight: 700; color: #ffffff; margin-bottom: 8px; }
+    .footer-text { color: rgba(255,255,255,0.5); font-size: 14px; }
     
     .footer-links {
         display: flex;
@@ -599,41 +484,18 @@ st.markdown(\"\"\"
         transition: color 0.3s ease;
     }
     
-    .footer-links a:hover {
-        color: #ffffff;
-    }
+    .footer-links a:hover { color: #ffffff; }
     
-    /* ═══════════════════════════════════════════════════════════
-       ANIMATIONS
-    ═══════════════════════════════════════════════════════════ */
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     @keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-    }
-    
-    /* Divider */
     hr {
         border: none;
         height: 1px;
@@ -641,7 +503,6 @@ st.markdown(\"\"\"
         margin: 48px 0;
     }
     
-    /* Feature Grid */
     .feature-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -676,24 +537,12 @@ st.markdown(\"\"\"
         margin: 0 auto 20px auto;
     }
     
-    .feature-title {
-        font-size: 20px;
-        font-weight: 600;
-        color: #1d1d1f;
-        margin-bottom: 12px;
-    }
-    
-    .feature-desc {
-        font-size: 14px;
-        color: #86868b;
-        line-height: 1.6;
-    }
+    .feature-title { font-size: 20px; font-weight: 600; color: #1d1d1f; margin-bottom: 12px; }
+    .feature-desc { font-size: 14px; color: #86868b; line-height: 1.6; }
 </style>
 \"\"\", unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════
 # HERO SECTION
-# ═══════════════════════════════════════════════════════════
 st.markdown('''
 <div class=\"hero-section\">
     <div class=\"hero-badge\">✨ Powered by Machine Learning</div>
@@ -718,9 +567,7 @@ st.markdown('''
 
 st.markdown('<div class=\"github-link\"><a href=\"https://github.com/Abtisam-Ahsan-Khan/bento-motors-ai\" target=\"_blank\">📂 View Source Code on GitHub</a></div>', unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════
 # FEATURE CARDS
-# ═══════════════════════════════════════════════════════════
 st.markdown('''
 <div class=\"feature-grid\">
     <div class=\"feature-card\">
@@ -741,17 +588,12 @@ st.markdown('''
 </div>
 ''', unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════
 # TABS
-# ═══════════════════════════════════════════════════════════
 tab1, tab2, tab3, tab4 = st.tabs([\"🔮 Price Predictor\", \"📊 Model Performance\", \"🧠 How It Works\", \"ℹ️ About\"])
 
 with tab1:
     st.markdown('<p class=\"section-header\">Predict Your Vehicle Price</p>', unsafe_allow_html=True)
     st.markdown('<p class=\"section-subheader\">Enter your vehicle details below for an AI-powered valuation</p>', unsafe_allow_html=True)
-    
-    st.markdown('<div class=\"form-container\">', unsafe_allow_html=True)
-    st.markdown('<div class=\"form-title\">Vehicle Specifications</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -767,8 +609,6 @@ with tab1:
     with col3:
         colour = st.selectbox(\"Colour\", [\"Black\", \"White\", \"Grey\", \"Blue\", \"Silver\", \"Red\", \"Green\", \"Orange\", \"Yellow\", \"Brown\", \"Other\"])
         crossover = st.selectbox(\"Crossover Car and Van\", [\"No\", \"Yes\"])
-    
-    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown(\"<br>\", unsafe_allow_html=True)
     
@@ -951,9 +791,7 @@ with tab4:
     </div>
     ''', unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════
 # FOOTER
-# ═══════════════════════════════════════════════════════════
 st.markdown('''
 <div class=\"footer\">
     <div class=\"footer-brand\">🚗 Bento Motors AI</div>
