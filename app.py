@@ -17,7 +17,6 @@ def load_models():
 reg_model, class_model, scaler, model_columns = load_models()
 
 st.set_page_config(page_title=\"Bento Motors AI\", page_icon=\"🚗\", layout=\"wide\", initial_sidebar_state=\"collapsed\")
-
 st.markdown(\"\"\"
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
