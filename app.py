@@ -3,7 +3,7 @@ import joblib
 import pickle
 import pandas as pd
 
-# Page config must come before most Streamlit commands
+# Page config
 st.set_page_config(
     page_title="Bento Motors AI",
     page_icon="🚗",
@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Load Models & Scalers
+# Load models and columns
 @st.cache_resource
 def load_models():
     reg = joblib.load("regression_model.joblib")
@@ -23,6 +23,56 @@ def load_models():
 
 
 reg_model, class_model, scaler, model_columns = load_models()
+
+
+def extract_values_from_columns(columns, prefix):
+    values = []
+    for col in columns:
+        if col.startswith(prefix):
+            values.append(col.replace(prefix, ""))
+    return sorted(values)
+
+
+# Extract dropdown values from trained columns
+available_makes = extract_values_from_columns(model_columns, "standard_make_")
+available_models = extract_values_from_columns(model_columns, "standard_model_")
+available_fuels = extract_values_from_columns(model_columns, "fuel_type_")
+available_bodies = extract_values_from_columns(model_columns, "body_type_")
+available_colours = extract_values_from_columns(model_columns, "standard_colour_")
+
+# Fallbacks
+if not available_makes:
+    available_makes = [
+        "BMW", "Audi", "Volkswagen", "Vauxhall", "Mercedes-Benz", "Nissan",
+        "Toyota", "Peugeot", "Land Rover", "Renault", "Ford", "Hyundai",
+        "Kia", "MINI", "Volvo", "Honda", "Citroen", "SEAT", "Mazda",
+        "Jaguar", "Tesla", "Porsche", "Lexus", "Other"
+    ]
+
+if not available_models:
+    available_models = [
+        "A3", "A4", "A6", "X1", "X3", "X5", "C Class", "E Class",
+        "Golf", "Polo", "Focus", "Fiesta", "Qashqai", "Tiguan", "Other"
+    ]
+
+if not available_fuels:
+    available_fuels = [
+        "Petrol", "Diesel", "Electric", "Petrol Hybrid",
+        "Petrol Plug-in Hybrid", "Diesel Hybrid"
+    ]
+
+if not available_bodies:
+    available_bodies = [
+        "Hatchback", "SUV", "Saloon", "Estate", "Coupe",
+        "Convertible", "MPV", "Pickup"
+    ]
+
+if not available_colours:
+    available_colours = [
+        "Black", "White", "Grey", "Blue", "Silver", "Red",
+        "Green", "Orange", "Yellow", "Brown", "Other"
+    ]
+
 
 st.markdown("""
 <style>
@@ -60,7 +110,7 @@ st.markdown("""
         transform: translateX(-50%);
         width: 150%;
         height: 100%;
-        background: radial-gradient(ellipse at 50% 0%, rgba(88, 86, 214, 0.15) 0%, transparent 60%);
+        background: radial-gradient(ellipse at 50% 0%, rgba(0, 113, 227, 0.15) 0%, transparent 60%);
         pointer-events: none;
     }
 
@@ -90,7 +140,7 @@ st.markdown("""
     }
 
     .hero-title span {
-        background: linear-gradient(135deg, #5e5ce6 0%, #bf5af2 50%, #ff375f 100%);
+        background: linear-gradient(135deg, #7dc3ff 0%, #4da3ff 50%, #0071e3 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -131,41 +181,6 @@ st.markdown("""
         margin-top: 8px;
     }
 
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 4px;
-        justify-content: center;
-        background: #f5f5f7;
-        border-radius: 14px;
-        padding: 6px;
-        max-width: 800px;
-        margin: 0 auto 50px auto;
-        border: none;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        border-radius: 10px;
-        padding: 12px 28px;
-        color: #1d1d1f;
-        font-weight: 600;
-        font-size: 14px;
-        border: none;
-        transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
-    }
-
-    .stTabs [data-baseweb="tab"]:hover { background: rgba(0,0,0,0.04); }
-
-    .stTabs [aria-selected="true"] {
-        background: #ffffff !important;
-        color: #1d1d1f !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-    }
-
-    .stTabs [data-baseweb="tab-highlight"],
-    .stTabs [data-baseweb="tab-border"] {
-        display: none;
-    }
-
     .section-header {
         font-size: 40px;
         font-weight: 700;
@@ -181,33 +196,6 @@ st.markdown("""
         font-weight: 400;
         text-align: center;
         margin-bottom: 40px;
-    }
-
-    .form-container {
-        background: #ffffff;
-        border-radius: 24px;
-        padding: 40px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
-        border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 32px;
-    }
-
-    .form-title {
-        font-size: 20px;
-        font-weight: 600;
-        color: #1d1d1f;
-        margin-bottom: 28px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .form-title::before {
-        content: '';
-        width: 4px;
-        height: 24px;
-        background: linear-gradient(180deg, #5e5ce6, #bf5af2);
-        border-radius: 2px;
     }
 
     .result-box {
@@ -227,8 +215,8 @@ st.markdown("""
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
         background:
-            radial-gradient(ellipse at 30% 0%, rgba(94,92,230,0.2) 0%, transparent 50%),
-            radial-gradient(ellipse at 70% 100%, rgba(191,90,242,0.15) 0%, transparent 50%);
+            radial-gradient(ellipse at 30% 0%, rgba(0,113,227,0.20) 0%, transparent 50%),
+            radial-gradient(ellipse at 70% 100%, rgba(125,125,130,0.12) 0%, transparent 50%);
         pointer-events: none;
     }
 
@@ -280,7 +268,7 @@ st.markdown("""
     }
 
     .cat-premium {
-        background: linear-gradient(135deg, #ff375f 0%, #ff6482 100%);
+        background: linear-gradient(135deg, #0071e3 0%, #5ac8fa 100%);
         padding: 16px 32px;
         border-radius: 16px;
         text-align: center;
@@ -289,7 +277,7 @@ st.markdown("""
         font-weight: 600;
         margin-top: 16px;
         display: inline-block;
-        box-shadow: 0 4px 16px rgba(255, 55, 95, 0.3);
+        box-shadow: 0 4px 16px rgba(0, 113, 227, 0.3);
     }
 
     .metric-card {
@@ -309,7 +297,7 @@ st.markdown("""
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 4px;
-        background: linear-gradient(90deg, #5e5ce6, #bf5af2);
+        background: linear-gradient(90deg, #0071e3, #5ac8fa);
     }
 
     .metric-card:hover {
@@ -389,7 +377,7 @@ st.markdown("""
         transform: translateY(-50%);
         width: 44px;
         height: 44px;
-        background: linear-gradient(135deg, #5e5ce6, #bf5af2);
+        background: linear-gradient(135deg, #0071e3, #5ac8fa);
         border-radius: 14px;
         color: white;
         display: flex;
@@ -397,7 +385,7 @@ st.markdown("""
         justify-content: center;
         font-weight: 700;
         font-size: 18px;
-        box-shadow: 0 4px 12px rgba(94, 92, 230, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
     }
 
     .step-card h4 {
@@ -415,7 +403,7 @@ st.markdown("""
     }
 
     .stButton > button {
-        background: linear-gradient(135deg, #5e5ce6 0%, #bf5af2 100%);
+        background: linear-gradient(135deg, #0071e3 0%, #5ac8fa 100%);
         color: white;
         border: none;
         padding: 16px 48px;
@@ -424,13 +412,13 @@ st.markdown("""
         font-weight: 600;
         width: 100%;
         transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
-        box-shadow: 0 4px 16px rgba(94, 92, 230, 0.3);
+        box-shadow: 0 4px 16px rgba(0, 113, 227, 0.3);
         letter-spacing: -0.2px;
     }
 
     .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 28px rgba(94, 92, 230, 0.4);
+        box-shadow: 0 8px 28px rgba(0, 113, 227, 0.4);
     }
 
     .stSelectbox > div > div,
@@ -451,8 +439,8 @@ st.markdown("""
     .stSelectbox > div > div:focus-within,
     .stNumberInput > div > div > input:focus {
         background: #ffffff !important;
-        border-color: #5e5ce6 !important;
-        box-shadow: 0 0 0 4px rgba(94, 92, 230, 0.1) !important;
+        border-color: #0071e3 !important;
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1) !important;
     }
 
     .stSelectbox label,
@@ -472,18 +460,18 @@ st.markdown("""
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        color: #5e5ce6;
+        color: #0071e3;
         text-decoration: none;
         font-weight: 600;
         font-size: 15px;
         padding: 12px 24px;
-        background: rgba(94, 92, 230, 0.08);
+        background: rgba(0, 113, 227, 0.08);
         border-radius: 30px;
         transition: all 0.3s ease;
     }
 
     .github-link a:hover {
-        background: rgba(94, 92, 230, 0.15);
+        background: rgba(0, 113, 227, 0.15);
         transform: translateY(-2px);
     }
 
@@ -565,7 +553,7 @@ st.markdown("""
     .feature-icon {
         width: 64px;
         height: 64px;
-        background: linear-gradient(135deg, #5e5ce6, #bf5af2);
+        background: linear-gradient(135deg, #0071e3, #5ac8fa);
         border-radius: 18px;
         display: flex;
         align-items: center;
@@ -623,258 +611,124 @@ st.markdown("""
     <div class="feature-card">
         <div class="feature-icon">🎯</div>
         <div class="feature-title">Accurate Predictions</div>
-        <div class="feature-desc">Random Forest model trained on 400K+ vehicles with 68% variance explained.</div>
+        <div class="feature-desc">Random Forest model trained on 400K+ vehicles with strong predictive power.</div>
     </div>
     <div class="feature-card">
         <div class="feature-icon">⚡</div>
         <div class="feature-title">Instant Results</div>
-        <div class="feature-desc">Get price predictions in milliseconds with our optimized ML pipeline.</div>
+        <div class="feature-desc">Get price predictions in seconds with a smooth business-friendly interface.</div>
     </div>
     <div class="feature-card">
-        <div class="feature-icon">🔍</div>
-        <div class="feature-title">Smart Categories</div>
-        <div class="feature-desc">Automatic classification into Budget, Mid-Range, and Premium segments.</div>
+        <div class="feature-icon">🚘</div>
+        <div class="feature-title">Model-Level Inputs</div>
+        <div class="feature-desc">Select make, model, fuel type, body type, and more for better valuations.</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# TABS
-tab1, tab2, tab3, tab4 = st.tabs(["🔮 Price Predictor", "📊 Model Performance", "🧠 How It Works", "ℹ️ About"])
+# MAIN LANDING PAGE PREDICTOR
+st.markdown('<p class="section-header">Predict Your Vehicle Price</p>', unsafe_allow_html=True)
+st.markdown('<p class="section-subheader">Enter your vehicle details below for an AI-powered valuation</p>', unsafe_allow_html=True)
 
-with tab1:
-    st.markdown('<p class="section-header">Predict Your Vehicle Price</p>', unsafe_allow_html=True)
-    st.markdown('<p class="section-subheader">Enter your vehicle details below for an AI-powered valuation</p>', unsafe_allow_html=True)
+col1, col2, col3 = st.columns(3)
 
-    col1, col2, col3 = st.columns(3)
+with col1:
+    make = st.selectbox("Make", available_makes)
+    model = st.selectbox("Model", available_models)
+    year = st.number_input("Year of Registration", min_value=1980, max_value=2024, value=2018)
 
-    with col1:
-        make = st.selectbox(
-            "Make",
-            [
-                "BMW", "Audi", "Volkswagen", "Vauxhall", "Mercedes-Benz", "Nissan",
-                "Toyota", "Peugeot", "Land Rover", "Renault", "Ford", "Hyundai",
-                "Kia", "MINI", "Volvo", "Honda", "Citroen", "SEAT", "Mazda",
-                "Jaguar", "Tesla", "Porsche", "Lexus", "Other"
-            ]
-        )
-        year = st.number_input("Year of Registration", min_value=1980, max_value=2024, value=2018)
-        fuel = st.selectbox(
-            "Fuel Type",
-            ["Petrol", "Diesel", "Electric", "Petrol Hybrid", "Petrol Plug-in Hybrid", "Diesel Hybrid"]
-        )
+with col2:
+    fuel = st.selectbox("Fuel Type", available_fuels)
+    body = st.selectbox("Body Type", available_bodies)
+    mileage = st.number_input("Mileage", min_value=0, max_value=300000, value=30000, step=1000)
 
-    with col2:
-        body = st.selectbox(
-            "Body Type",
-            ["Hatchback", "SUV", "Saloon", "Estate", "Coupe", "Convertible", "MPV", "Pickup"]
-        )
-        mileage = st.number_input("Mileage", min_value=0, max_value=200000, value=30000, step=1000)
-        condition = st.selectbox("Condition", ["USED", "NEW"])
+with col3:
+    condition = st.selectbox("Condition", ["USED", "NEW"])
+    colour = st.selectbox("Colour", available_colours)
+    crossover = st.selectbox("Crossover Car and Van", ["No", "Yes"])
 
-    with col3:
-        colour = st.selectbox(
-            "Colour",
-            ["Black", "White", "Grey", "Blue", "Silver", "Red", "Green", "Orange", "Yellow", "Brown", "Other"]
-        )
-        crossover = st.selectbox("Crossover Car and Van", ["No", "Yes"])
+st.markdown("<br>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+if st.button("🚀 Get Price Prediction"):
+    input_data = pd.DataFrame(0, index=[0], columns=model_columns)
 
-    if st.button("🚀 Get Price Prediction"):
-        input_data = pd.DataFrame(0, index=[0], columns=model_columns)
+    vehicle_age = 2024 - year
 
-        vehicle_age = 2024 - year
+    if "mileage" in input_data.columns:
         input_data["mileage"] = mileage
+    if "year_of_registration" in input_data.columns:
         input_data["year_of_registration"] = year
+    if "vehicle_age" in input_data.columns:
         input_data["vehicle_age"] = vehicle_age
 
-        num_features = ["mileage", "year_of_registration", "vehicle_age"]
-        input_data[num_features] = scaler.transform(input_data[num_features])
+    numeric_features = ["mileage", "year_of_registration", "vehicle_age"]
+    existing_numeric_features = [col for col in numeric_features if col in input_data.columns]
 
-        if condition == "NEW" and "vehicle_condition_NEW" in input_data.columns:
-            input_data["vehicle_condition_NEW"] = 1
+    if len(existing_numeric_features) == len(numeric_features):
+        input_data[existing_numeric_features] = scaler.transform(input_data[existing_numeric_features])
 
-        for prefix, val in [
-            ("fuel_type_", fuel),
-            ("body_type_", body),
-            ("standard_make_", make),
-            ("standard_colour_", colour),
-        ]:
-            col_name = f"{prefix}{val}"
-            if col_name in input_data.columns:
-                input_data[col_name] = 1
+    if condition == "NEW" and "vehicle_condition_NEW" in input_data.columns:
+        input_data["vehicle_condition_NEW"] = 1
 
-        if crossover == "Yes" and "crossover_car_and_van" in input_data.columns:
-            input_data["crossover_car_and_van"] = 1
+    for prefix, val in [
+        ("fuel_type_", fuel),
+        ("body_type_", body),
+        ("standard_make_", make),
+        ("standard_model_", model),
+        ("standard_colour_", colour),
+    ]:
+        col_name = f"{prefix}{val}"
+        if col_name in input_data.columns:
+            input_data[col_name] = 1
 
-        price_pred = reg_model.predict(input_data)[0]
+    if crossover == "Yes" and "crossover_car_and_van" in input_data.columns:
+        input_data["crossover_car_and_van"] = 1
 
-        if price_pred < 10000:
-            category, cat_class, cat_icon = "Budget", "cat-budget", "🟢"
-        elif price_pred < 25000:
-            category, cat_class, cat_icon = "Mid-Range", "cat-mid", "🟡"
-        else:
-            category, cat_class, cat_icon = "Premium", "cat-premium", "🔴"
+    price_pred = reg_model.predict(input_data)[0]
 
+    if price_pred < 10000:
+        category, cat_class, cat_icon = "Budget", "cat-budget", "🟢"
+    elif price_pred < 25000:
+        category, cat_class, cat_icon = "Mid-Range", "cat-mid", "🟡"
+    else:
+        category, cat_class, cat_icon = "Premium", "cat-premium", "🔵"
+
+    st.markdown(f"""
+    <div class="result-box">
+        <div class="label">Estimated Vehicle Price</div>
+        <div class="price">£{price_pred:,.2f}</div>
+    </div>
+    <div style="text-align: center;">
+        <div class="{cat_class}">{cat_icon} {category} Category</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown('<p class="section-header" style="font-size: 28px;">Vehicle Summary</p>', unsafe_allow_html=True)
+
+    s1, s2 = st.columns(2)
+
+    with s1:
         st.markdown(f"""
-        <div class="result-box">
-            <div class="label">Estimated Vehicle Price</div>
-            <div class="price">£{price_pred:,.2f}</div>
-        </div>
-        <div style="text-align: center;">
-            <div class="{cat_class}">{cat_icon} {category} Category</div>
+        <div class="info-box">
+            <h4>🚗 Vehicle Details</h4>
+            <div class="summary-row"><span class="summary-label">Make</span><span class="summary-value">{make}</span></div>
+            <div class="summary-row"><span class="summary-label">Model</span><span class="summary-value">{model}</span></div>
+            <div class="summary-row"><span class="summary-label">Body Type</span><span class="summary-value">{body}</span></div>
+            <div class="summary-row"><span class="summary-label">Fuel Type</span><span class="summary-value">{fuel}</span></div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown('<p class="section-header" style="font-size: 28px;">Vehicle Summary</p>', unsafe_allow_html=True)
-
-        s1, s2 = st.columns(2)
-
-        with s1:
-            st.markdown(f"""
-            <div class="info-box">
-                <h4>🚗 Vehicle Details</h4>
-                <div class="summary-row"><span class="summary-label">Make</span><span class="summary-value">{make}</span></div>
-                <div class="summary-row"><span class="summary-label">Body Type</span><span class="summary-value">{body}</span></div>
-                <div class="summary-row"><span class="summary-label">Fuel Type</span><span class="summary-value">{fuel}</span></div>
-                <div class="summary-row"><span class="summary-label">Colour</span><span class="summary-value">{colour}</span></div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with s2:
-            st.markdown(f"""
-            <div class="info-box">
-                <h4>📋 Specifications</h4>
-                <div class="summary-row"><span class="summary-label">Mileage</span><span class="summary-value">{mileage:,} miles</span></div>
-                <div class="summary-row"><span class="summary-label">Year</span><span class="summary-value">{year}</span></div>
-                <div class="summary-row"><span class="summary-label">Vehicle Age</span><span class="summary-value">{vehicle_age} years</span></div>
-                <div class="summary-row"><span class="summary-label">Condition</span><span class="summary-value">{condition}</span></div>
-            </div>
-            """, unsafe_allow_html=True)
-
-with tab2:
-    st.markdown('<p class="section-header">Model Performance</p>', unsafe_allow_html=True)
-    st.markdown('<p class="section-subheader">Detailed metrics and insights from our machine learning models</p>', unsafe_allow_html=True)
-
-    st.markdown("### 📈 Regression Model — Random Forest")
-    m1, m2, m3 = st.columns(3)
-
-    with m1:
-        st.markdown('<div class="metric-card"><div class="value">0.68</div><div class="desc">Test R² Score</div></div>', unsafe_allow_html=True)
-    with m2:
-        st.markdown('<div class="metric-card"><div class="value">£9,284</div><div class="desc">Test RMSE</div></div>', unsafe_allow_html=True)
-    with m3:
-        st.markdown('<div class="metric-card"><div class="value">68%</div><div class="desc">Variance Explained</div></div>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="info-box">
-        <p>
-            The regression model predicts exact vehicle prices using a <strong>Tuned Random Forest Regressor</strong>.
-            It was optimised through two rounds of GridSearchCV. The model explains 68% of price variation —
-            the remaining 32% is due to features not in the dataset such as engine size and service history.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    st.markdown("### 🏷️ Classification Model — Decision Tree")
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.markdown('<div class="metric-card"><div class="value">83%</div><div class="desc">Test Accuracy</div></div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown('<div class="metric-card"><div class="value">3</div><div class="desc">Categories</div></div>', unsafe_allow_html=True)
-    with c3:
-        st.markdown('<div class="metric-card"><div class="value">2</div><div class="desc">Tuning Rounds</div></div>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="info-box">
-        <p>
-            The classification model groups vehicles into <strong>Budget</strong> (under £10k),
-            <strong>Mid-Range</strong> (£10k-£25k), and <strong>Premium</strong> (over £25k).
-            This helps Bento Motors quickly classify incoming stock.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    st.markdown("### 🎯 Top Predictors")
-    st.markdown("""
-    <div class="info-box">
-        <p>📉 <strong>Mileage</strong> — Higher mileage significantly reduces vehicle value</p><br>
-        <p>📅 <strong>Vehicle Age</strong> — Steepest depreciation occurs in first 3-4 years</p><br>
-        <p>🏭 <strong>Make</strong> — Premium brands command substantially higher prices</p><br>
-        <p>⛽ <strong>Fuel Type</strong> — Electric and hybrid vehicles valued higher</p><br>
-        <p>🚗 <strong>Body Type</strong> — SUVs and convertibles attract price premiums</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with tab3:
-    st.markdown('<p class="section-header">How It Works</p>', unsafe_allow_html=True)
-    st.markdown('<p class="section-subheader">Our end-to-end machine learning pipeline</p>', unsafe_allow_html=True)
-
-    steps = [
-        ("1", "Data Collection", "Analysed over 400,000 vehicle advertisements from Bento Motors' comprehensive database."),
-        ("2", "Data Processing", "Cleaned errors, handled missing data, removed outliers, encoded categorical variables, and scaled numerical features."),
-        ("3", "Model Training", "Tested Linear Regression, Decision Tree, and Random Forest for regression; Decision Tree and Logistic Regression for classification."),
-        ("4", "Hyperparameter Tuning", "Applied GridSearchCV across two rounds, retraining with optimal parameters on the full dataset."),
-        ("5", "SHAP Interpretation", "Implemented SHAP framework for model transparency — explaining which features drive each prediction."),
-        ("6", "Deployment", "Saved models with Joblib and deployed this interactive Streamlit application.")
-    ]
-
-    for num, title, desc in steps:
+    with s2:
         st.markdown(f"""
-        <div class="step-card">
-            <div class="step-num">{num}</div>
-            <h4>{title}</h4>
-            <p>{desc}</p>
+        <div class="info-box">
+            <h4>📋 Specifications</h4>
+            <div class="summary-row"><span class="summary-label">Mileage</span><span class="summary-value">{mileage:,} miles</span></div>
+            <div class="summary-row"><span class="summary-label">Year</span><span class="summary-value">{year}</span></div>
+            <div class="summary-row"><span class="summary-label">Vehicle Age</span><span class="summary-value">{vehicle_age} years</span></div>
+            <div class="summary-row"><span class="summary-label">Condition</span><span class="summary-value">{condition}</span></div>
         </div>
         """, unsafe_allow_html=True)
-
-with tab4:
-    st.markdown('<p class="section-header">About This Project</p>', unsafe_allow_html=True)
-    st.markdown('<p class="section-subheader">Academic project for Applied AI at University Academy 92</p>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="info-box">
-        <h4>🚗 Bento Motors AI Price Predictor</h4>
-        <p>Developed for <strong>Applied AI (UA92-333)</strong> at University Academy 92, Manchester.</p>
-        <br>
-        <div class="summary-row"><span class="summary-label">Dataset</span><span class="summary-value">402,005 vehicle advertisements</span></div>
-        <div class="summary-row"><span class="summary-label">Regression Model</span><span class="summary-value">Tuned Random Forest (R² = 0.68)</span></div>
-        <div class="summary-row"><span class="summary-label">Classification Model</span><span class="summary-value">Tuned Decision Tree (83% accuracy)</span></div>
-        <div class="summary-row"><span class="summary-label">Interpretation</span><span class="summary-value">SHAP Framework</span></div>
-        <div class="summary-row"><span class="summary-label">Deployment</span><span class="summary-value">Streamlit Cloud</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    st.markdown("### ⚖️ Ethical AI Considerations")
-    st.markdown("""
-    <div class="info-box">
-        <p>🔹 Model uses objective features (mileage, age, condition) — ensuring fair and transparent predictions</p><br>
-        <p>🔹 Colour has minor influence — should be monitored for potential bias</p><br>
-        <p>🔹 Under <strong>GDPR Article 22</strong>, customers can request explanation of automated decisions</p><br>
-        <p>🔹 <strong>EU AI Act</strong> classifies this as limited-risk — transparency obligations apply</p><br>
-        <p>🔹 Regular audits recommended to detect bias or model drift over time</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    st.markdown("### ⚠️ Limitations")
-    st.markdown("""
-    <div class="info-box">
-        <p>🔹 Missing features: engine size, service history, previous owners, trim level</p><br>
-        <p>🔹 Based on historical data — may not reflect current market conditions</p><br>
-        <p>🔹 68% variance explained — 32% attributed to unmeasured factors</p><br>
-        <p>🔹 Rare or luxury vehicles may receive less accurate predictions</p>
-    </div>
-    """, unsafe_allow_html=True)
 
 # FOOTER
 st.markdown("""
