@@ -2,6 +2,8 @@ import streamlit as st
 import joblib
 import pickle
 import pandas as pd
+import zipfile
+from pathlib import Path
 
 # Page config
 st.set_page_config(
@@ -11,7 +13,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Load models and columns
+# -----------------------------
+# LOAD MODELS
+# -----------------------------
 @st.cache_resource
 def load_models():
     reg = joblib.load("regression_model.joblib")
@@ -22,57 +26,71 @@ def load_models():
     return reg, clf, sc, cols
 
 
+# -----------------------------
+# LOAD DATASET FROM GITHUB REPO
+# -----------------------------
+@st.cache_data
+def load_dataset():
+    possible_csv_files = [
+        "adverts 1 (1).csv",
+        "adverts.csv",
+        "dataset.csv"
+    ]
+
+    possible_zip_files = [
+        "adverts 1 (1).zip",
+        "adverts.zip",
+        "dataset.zip"
+    ]
+
+    # Try CSV first
+    for file_name in possible_csv_files:
+        if Path(file_name).exists():
+            return pd.read_csv(file_name)
+
+    # Then try ZIP
+    for zip_name in possible_zip_files:
+        if Path(zip_name).exists():
+            with zipfile.ZipFile(zip_name) as z:
+                csv_files = [name for name in z.namelist() if name.lower().endswith(".csv")]
+                if not csv_files:
+                    raise FileNotFoundError(f"No CSV file found inside {zip_name}")
+                with z.open(csv_files[0]) as f:
+                    return pd.read_csv(f)
+
+    raise FileNotFoundError(
+        "Dataset file not found. Add adverts 1 (1).csv or adverts 1 (1).zip to your GitHub repo."
+    )
+
+
+def clean_unique_values(series):
+    return sorted(series.dropna().astype(str).str.strip().unique().tolist())
+
+
+def get_models_for_make(dataframe, selected_make):
+    filtered = dataframe.loc[
+        dataframe["standard_make"].astype(str).str.strip() == selected_make,
+        "standard_model"
+    ]
+    return clean_unique_values(filtered)
+
+
+def make_model_is_valid(dataframe, selected_make, selected_model):
+    match = dataframe[
+        (dataframe["standard_make"].astype(str).str.strip() == selected_make) &
+        (dataframe["standard_model"].astype(str).str.strip() == selected_model)
+    ]
+    return not match.empty
+
+
 reg_model, class_model, scaler, model_columns = load_models()
+df = load_dataset()
 
-
-def extract_values_from_columns(columns, prefix):
-    values = []
-    for col in columns:
-        if col.startswith(prefix):
-            values.append(col.replace(prefix, ""))
-    return sorted(values)
-
-
-# Extract dropdown values from trained columns
-available_makes = extract_values_from_columns(model_columns, "standard_make_")
-available_models = extract_values_from_columns(model_columns, "standard_model_")
-available_fuels = extract_values_from_columns(model_columns, "fuel_type_")
-available_bodies = extract_values_from_columns(model_columns, "body_type_")
-available_colours = extract_values_from_columns(model_columns, "standard_colour_")
-
-# Fallbacks
-if not available_makes:
-    available_makes = [
-        "BMW", "Audi", "Volkswagen", "Vauxhall", "Mercedes-Benz", "Nissan",
-        "Toyota", "Peugeot", "Land Rover", "Renault", "Ford", "Hyundai",
-        "Kia", "MINI", "Volvo", "Honda", "Citroen", "SEAT", "Mazda",
-        "Jaguar", "Tesla", "Porsche", "Lexus", "Other"
-    ]
-
-if not available_models:
-    available_models = [
-        "A3", "A4", "A6", "X1", "X3", "X5", "C Class", "E Class",
-        "Golf", "Polo", "Focus", "Fiesta", "Qashqai", "Tiguan", "Other"
-    ]
-
-if not available_fuels:
-    available_fuels = [
-        "Petrol", "Diesel", "Electric", "Petrol Hybrid",
-        "Petrol Plug-in Hybrid", "Diesel Hybrid"
-    ]
-
-if not available_bodies:
-    available_bodies = [
-        "Hatchback", "SUV", "Saloon", "Estate", "Coupe",
-        "Convertible", "MPV", "Pickup"
-    ]
-
-if not available_colours:
-    available_colours = [
-        "Black", "White", "Grey", "Blue", "Silver", "Red",
-        "Green", "Orange", "Yellow", "Brown", "Other"
-    ]
-
+# Dropdown values from dataset
+available_makes = clean_unique_values(df["standard_make"]) if "standard_make" in df.columns else []
+available_fuels = clean_unique_values(df["fuel_type"]) if "fuel_type" in df.columns else []
+available_bodies = clean_unique_values(df["body_type"]) if "body_type" in df.columns else []
+available_colours = clean_unique_values(df["standard_colour"]) if "standard_colour" in df.columns else []
 
 st.markdown("""
 <style>
@@ -160,6 +178,7 @@ st.markdown("""
         justify-content: center;
         gap: 80px;
         animation: fadeInUp 0.8s ease-out 0.3s both;
+        flex-wrap: wrap;
     }
 
     .stat-item { text-align: center; }
@@ -280,46 +299,6 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(0, 113, 227, 0.3);
     }
 
-    .metric-card {
-        background: #ffffff;
-        padding: 32px 24px;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.04);
-        border: 1px solid rgba(0,0,0,0.04);
-        transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #0071e3, #5ac8fa);
-    }
-
-    .metric-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.08);
-    }
-
-    .metric-card .value {
-        color: #1d1d1f;
-        margin: 0;
-        font-size: 44px;
-        font-weight: 700;
-        letter-spacing: -1px;
-    }
-
-    .metric-card .desc {
-        color: #86868b;
-        margin: 8px 0 0 0;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
     .info-box {
         background: #ffffff;
         padding: 32px;
@@ -336,13 +315,6 @@ st.markdown("""
         font-weight: 600;
     }
 
-    .info-box p {
-        color: #424245;
-        line-height: 1.8;
-        margin-bottom: 0;
-        font-size: 15px;
-    }
-
     .summary-row {
         display: flex;
         justify-content: space-between;
@@ -353,54 +325,6 @@ st.markdown("""
     .summary-row:last-child { border-bottom: none; }
     .summary-label { color: #86868b; font-weight: 500; font-size: 14px; }
     .summary-value { color: #1d1d1f; font-weight: 600; font-size: 14px; }
-
-    .step-card {
-        background: #ffffff;
-        padding: 28px 28px 28px 80px;
-        border-radius: 20px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 4px 24px rgba(0,0,0,0.04);
-        margin: 16px 0;
-        position: relative;
-        transition: all 0.3s ease;
-    }
-
-    .step-card:hover {
-        transform: translateX(8px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-    }
-
-    .step-num {
-        position: absolute;
-        left: 24px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 44px;
-        height: 44px;
-        background: linear-gradient(135deg, #0071e3, #5ac8fa);
-        border-radius: 14px;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 18px;
-        box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
-    }
-
-    .step-card h4 {
-        color: #1d1d1f;
-        margin: 0 0 8px 0;
-        font-size: 17px;
-        font-weight: 600;
-    }
-
-    .step-card p {
-        color: #86868b;
-        margin: 0;
-        line-height: 1.6;
-        font-size: 14px;
-    }
 
     .stButton > button {
         background: linear-gradient(135deg, #0071e3 0%, #5ac8fa 100%);
@@ -500,6 +424,7 @@ st.markdown("""
         justify-content: center;
         gap: 32px;
         margin-top: 24px;
+        flex-wrap: wrap;
     }
 
     .footer-links a {
@@ -519,13 +444,6 @@ st.markdown("""
     @keyframes fadeInDown {
         from { opacity: 0; transform: translateY(-20px); }
         to { opacity: 1; transform: translateY(0); }
-    }
-
-    hr {
-        border: none;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #d2d2d7, transparent);
-        margin: 48px 0;
     }
 
     .feature-grid {
@@ -574,6 +492,24 @@ st.markdown("""
         color: #86868b;
         line-height: 1.6;
     }
+
+    @media (max-width: 900px) {
+        .feature-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-title {
+            font-size: 48px;
+        }
+
+        .hero-stats {
+            gap: 32px;
+        }
+
+        .result-box .price {
+            font-size: 42px;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -620,8 +556,8 @@ st.markdown("""
     </div>
     <div class="feature-card">
         <div class="feature-icon">🚘</div>
-        <div class="feature-title">Model-Level Inputs</div>
-        <div class="feature-desc">Select make, model, fuel type, body type, and more for better valuations.</div>
+        <div class="feature-title">Make-Matched Models</div>
+        <div class="feature-desc">The model dropdown only shows valid models for the selected make.</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -634,7 +570,12 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     make = st.selectbox("Make", available_makes)
-    model = st.selectbox("Model", available_models)
+
+    filtered_models = get_models_for_make(df, make)
+    if not filtered_models:
+        filtered_models = ["No models found"]
+
+    model = st.selectbox("Model", filtered_models)
     year = st.number_input("Year of Registration", min_value=1980, max_value=2024, value=2018)
 
 with col2:
@@ -650,85 +591,93 @@ with col3:
 st.markdown("<br>", unsafe_allow_html=True)
 
 if st.button("🚀 Get Price Prediction"):
-    input_data = pd.DataFrame(0, index=[0], columns=model_columns)
+    valid_pair = make_model_is_valid(df, make, model)
 
-    vehicle_age = 2024 - year
-
-    if "mileage" in input_data.columns:
-        input_data["mileage"] = mileage
-    if "year_of_registration" in input_data.columns:
-        input_data["year_of_registration"] = year
-    if "vehicle_age" in input_data.columns:
-        input_data["vehicle_age"] = vehicle_age
-
-    numeric_features = ["mileage", "year_of_registration", "vehicle_age"]
-    existing_numeric_features = [col for col in numeric_features if col in input_data.columns]
-
-    if len(existing_numeric_features) == len(numeric_features):
-        input_data[existing_numeric_features] = scaler.transform(input_data[existing_numeric_features])
-
-    if condition == "NEW" and "vehicle_condition_NEW" in input_data.columns:
-        input_data["vehicle_condition_NEW"] = 1
-
-    for prefix, val in [
-        ("fuel_type_", fuel),
-        ("body_type_", body),
-        ("standard_make_", make),
-        ("standard_model_", model),
-        ("standard_colour_", colour),
-    ]:
-        col_name = f"{prefix}{val}"
-        if col_name in input_data.columns:
-            input_data[col_name] = 1
-
-    if crossover == "Yes" and "crossover_car_and_van" in input_data.columns:
-        input_data["crossover_car_and_van"] = 1
-
-    price_pred = reg_model.predict(input_data)[0]
-
-    if price_pred < 10000:
-        category, cat_class, cat_icon = "Budget", "cat-budget", "🟢"
-    elif price_pred < 25000:
-        category, cat_class, cat_icon = "Mid-Range", "cat-mid", "🟡"
+    if not valid_pair:
+        st.error("Selected make and model do not match. Please choose a valid combination.")
     else:
-        category, cat_class, cat_icon = "Premium", "cat-premium", "🔵"
+        input_data = pd.DataFrame(0, index=[0], columns=model_columns)
 
-    st.markdown(f"""
-    <div class="result-box">
-        <div class="label">Estimated Vehicle Price</div>
-        <div class="price">£{price_pred:,.2f}</div>
-    </div>
-    <div style="text-align: center;">
-        <div class="{cat_class}">{cat_icon} {category} Category</div>
-    </div>
-    """, unsafe_allow_html=True)
+        vehicle_age = 2024 - year
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown('<p class="section-header" style="font-size: 28px;">Vehicle Summary</p>', unsafe_allow_html=True)
+        if "mileage" in input_data.columns:
+            input_data["mileage"] = mileage
+        if "year_of_registration" in input_data.columns:
+            input_data["year_of_registration"] = year
+        if "vehicle_age" in input_data.columns:
+            input_data["vehicle_age"] = vehicle_age
 
-    s1, s2 = st.columns(2)
+        numeric_features = ["mileage", "year_of_registration", "vehicle_age"]
+        existing_numeric_features = [col for col in numeric_features if col in input_data.columns]
 
-    with s1:
+        if len(existing_numeric_features) == len(numeric_features):
+            input_data[existing_numeric_features] = scaler.transform(input_data[existing_numeric_features])
+
+        if condition == "NEW" and "vehicle_condition_NEW" in input_data.columns:
+            input_data["vehicle_condition_NEW"] = 1
+
+        if condition == "USED" and "vehicle_condition_USED" in input_data.columns:
+            input_data["vehicle_condition_USED"] = 1
+
+        for prefix, val in [
+            ("fuel_type_", fuel),
+            ("body_type_", body),
+            ("standard_make_", make),
+            ("standard_model_", model),
+            ("standard_colour_", colour),
+        ]:
+            col_name = f"{prefix}{val}"
+            if col_name in input_data.columns:
+                input_data[col_name] = 1
+
+        if "crossover_car_and_van" in input_data.columns:
+            input_data["crossover_car_and_van"] = 1 if crossover == "Yes" else 0
+
+        price_pred = reg_model.predict(input_data)[0]
+
+        if price_pred < 10000:
+            category, cat_class, cat_icon = "Budget", "cat-budget", "🟢"
+        elif price_pred < 25000:
+            category, cat_class, cat_icon = "Mid-Range", "cat-mid", "🟡"
+        else:
+            category, cat_class, cat_icon = "Premium", "cat-premium", "🔵"
+
         st.markdown(f"""
-        <div class="info-box">
-            <h4>🚗 Vehicle Details</h4>
-            <div class="summary-row"><span class="summary-label">Make</span><span class="summary-value">{make}</span></div>
-            <div class="summary-row"><span class="summary-label">Model</span><span class="summary-value">{model}</span></div>
-            <div class="summary-row"><span class="summary-label">Body Type</span><span class="summary-value">{body}</span></div>
-            <div class="summary-row"><span class="summary-label">Fuel Type</span><span class="summary-value">{fuel}</span></div>
+        <div class="result-box">
+            <div class="label">Estimated Vehicle Price</div>
+            <div class="price">£{price_pred:,.2f}</div>
+        </div>
+        <div style="text-align: center;">
+            <div class="{cat_class}">{cat_icon} {category} Category</div>
         </div>
         """, unsafe_allow_html=True)
 
-    with s2:
-        st.markdown(f"""
-        <div class="info-box">
-            <h4>📋 Specifications</h4>
-            <div class="summary-row"><span class="summary-label">Mileage</span><span class="summary-value">{mileage:,} miles</span></div>
-            <div class="summary-row"><span class="summary-label">Year</span><span class="summary-value">{year}</span></div>
-            <div class="summary-row"><span class="summary-label">Vehicle Age</span><span class="summary-value">{vehicle_age} years</span></div>
-            <div class="summary-row"><span class="summary-label">Condition</span><span class="summary-value">{condition}</span></div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown('<p class="section-header" style="font-size: 28px;">Vehicle Summary</p>', unsafe_allow_html=True)
+
+        s1, s2 = st.columns(2)
+
+        with s1:
+            st.markdown(f"""
+            <div class="info-box">
+                <h4>🚗 Vehicle Details</h4>
+                <div class="summary-row"><span class="summary-label">Make</span><span class="summary-value">{make}</span></div>
+                <div class="summary-row"><span class="summary-label">Model</span><span class="summary-value">{model}</span></div>
+                <div class="summary-row"><span class="summary-label">Body Type</span><span class="summary-value">{body}</span></div>
+                <div class="summary-row"><span class="summary-label">Fuel Type</span><span class="summary-value">{fuel}</span></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with s2:
+            st.markdown(f"""
+            <div class="info-box">
+                <h4>📋 Specifications</h4>
+                <div class="summary-row"><span class="summary-label">Mileage</span><span class="summary-value">{mileage:,} miles</span></div>
+                <div class="summary-row"><span class="summary-label">Year</span><span class="summary-value">{year}</span></div>
+                <div class="summary-row"><span class="summary-label">Vehicle Age</span><span class="summary-value">{vehicle_age} years</span></div>
+                <div class="summary-row"><span class="summary-label">Condition</span><span class="summary-value">{condition}</span></div>
+            </div>
+            """, unsafe_allow_html=True)
 
 # FOOTER
 st.markdown("""
